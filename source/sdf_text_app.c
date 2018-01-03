@@ -305,7 +305,7 @@ void onPointerEvent(OKAPP_PointerEvent pointerEvent) {
     } else if (pointerEvent.eventType == OKAPP_POINTER_SCROLL) {
         targetScale *= 1.0f + (pointerEvent.y * 0.15);
         if (targetScale > 100.0f) {
-            targetScale = 100.01f;
+            targetScale = 100.0f;
         }
     }
 }

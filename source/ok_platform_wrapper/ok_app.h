@@ -629,6 +629,18 @@ OKAPP_DEF_INTERNAL void okapp__mainLoop() {
                     pointerEvent.index = -1;
                     pointerEvent.x = (float) event.wheel.x;
                     pointerEvent.y = (float) event.wheel.y;
+                    if (pointerEvent.x > 1.0f) {
+                        pointerEvent.x = 1.0f;
+                    }
+                    if (pointerEvent.x < -1.0f) {
+                        pointerEvent.x = -1.0f;
+                    }
+                    if (pointerEvent.y > 1.0f) {
+                        pointerEvent.y = 1.0f;
+                    }
+                    if (pointerEvent.y < -1.0f) {
+                        pointerEvent.y = -1.0f;
+                    }
                     pointerEvent.deltaX = pointerEvent.x;
                     pointerEvent.deltaY = pointerEvent.y;
                     okapp_appSetup.onPointerEvent(pointerEvent);
