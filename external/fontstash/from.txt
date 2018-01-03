@@ -1,0 +1,4 @@
+NOTE: this is the "gs_es2" branch from:
+https://github.com/suikki/fontstash
+
+(original source: https://github.com/memononen/fontstash)
