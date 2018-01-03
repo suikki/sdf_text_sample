@@ -8,6 +8,7 @@ Tested on linux, windows, android and emscripten.
 Requirements:
 - cmake 3.2 or newer
 - on Windows: Visual studio (tested with vs14) or mingw
+- on linux: SDL2 dev package must be installed
 
 ## License
 The project is licensed under the [zlib license](LICENSE.txt)
