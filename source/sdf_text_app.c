@@ -552,7 +552,7 @@ void onRender() {
         x = 5.0f;
         fonsSetColor(fs, glfonsRGBA(57, 57, 57, 255));
         char fps[10];
-        sprintf_s(fps, 10, "%.2f", (1.0 / deltaT));
+        snprintf(fps, 10, "%.2f", (1.0 / deltaT));
         x += fonsDrawText(fs, x, y, "fps: ", NULL);
         fonsDrawText(fs, x, y, fps, NULL);
     }
