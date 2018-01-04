@@ -313,16 +313,19 @@ void onRender() {
     // Some kind of simple time measurement.
     uint64_t now = okapp_getTimerMicros();
     uint64_t lastFrameTimeMicros = 0;
+    double deltaT = 0.0;
     if (timeMicros != 0) {
         lastFrameTimeMicros = now - timeMicros;
-        double deltaT = lastFrameTimeMicros * 0.000001;
+        deltaT = lastFrameTimeMicros * 0.000001;
     }
     timeMicros = now;
-	double timeSeconds = timeMicros * 0.000001;
+    double timeSeconds = timeMicros * 0.000001;
 
-    // Smoothing to zoom (should be made to depend on deltaT)
-    scale = (scale * 0.9f) + (targetScale * 0.1f);
-
+    // Smoothing the zoom a bit.
+    if (deltaT > 0.0) {
+        float smoothing = powf(0.9f, (float) (deltaT * 60.0));
+        scale = (targetScale * (1.0f - smoothing)) + (scale * smoothing);
+    }
 
     glViewport(0, 0, windowWidth, windowHeight);
 
@@ -520,13 +523,17 @@ void onRender() {
         fonsVertMetrics(fs, NULL, NULL, &lineHeight);
         lineHeight *= 1.2f;
 
+        y = 5.0f;
+
         // First draw a shadow.
         fonsSetColor(fs, glfonsRGBA(0, 0, 0, 255));
         fonsSetBlur(fs, 3.0f);
-        x = 5.0f;
-        y = 5.0f;
 
+        float yStart = y;
         for (int i = 0; i < 2; ++i) {
+            x = 5.0f;
+            y = yStart;
+
             fonsDrawText(fs, x, y, "drag to pan, zoom with mouse wheel", NULL);
             y += lineHeight;
             fonsDrawText(fs, x, y, "'c' - show font cache", NULL);
@@ -534,13 +541,20 @@ void onRender() {
             fonsDrawText(fs, x, y, "'f' - toggle fullscreen", NULL);
             y += lineHeight;
             fonsDrawText(fs, x, y, "'r' - reload shaders", NULL);
+            y += lineHeight;
 
             // Draw again without blurring
             fonsSetColor(fs, glfonsRGBA(255, 255, 255, 255));
             fonsSetBlur(fs, 0.0f);
-            x = 5.0f;
-            y = 5.0f;
         }
+
+        // Show fps.
+        x = 5.0f;
+        fonsSetColor(fs, glfonsRGBA(57, 57, 57, 255));
+        char fps[10];
+        sprintf_s(fps, 10, "%.2f", (1.0 / deltaT));
+        x += fonsDrawText(fs, x, y, "fps: ", NULL);
+        fonsDrawText(fs, x, y, fps, NULL);
     }
 
     glDisable(GL_BLEND);

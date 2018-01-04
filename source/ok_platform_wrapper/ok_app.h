@@ -397,9 +397,6 @@ OKAPP_DEF_INTERNAL int okapp__init() {
     // Request doublebuffering.
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
-    // Enable vsync.
-    SDL_GL_SetSwapInterval(1);
-
 #ifdef OK_OPENGL_ES
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, OK_OPENGL_ES_MAJOR_VERSION);
@@ -435,6 +432,8 @@ OKAPP_DEF_INTERNAL int okapp__init() {
         return 0;
     }
 
+    // Enable vsync.
+    SDL_GL_SetSwapInterval(1);
 
 #ifndef OK_OPENGL_ES
     /* Load OpenGL extensions using GLEW. */
