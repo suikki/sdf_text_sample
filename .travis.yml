@@ -1,5 +1,9 @@
 language: c
-script: cd platforms && build.sh
+
+before_script:
+  - cd platforms
+
+script: ./build.sh
 
 addons:
   apt:
