@@ -93,6 +93,8 @@ endif()
 target_include_directories(${targetName} PUBLIC ${projectIncludeDirs})
 target_link_libraries(${targetName} ${projectLinkLibs} )
 
+# Using C99 standard.
+set_property(TARGET ${targetName} PROPERTY C_STANDARD 99)
 
 #
 # This will automatically copy any predefined binary dependencies to the output dir
