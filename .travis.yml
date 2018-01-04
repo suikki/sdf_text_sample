@@ -1,0 +1,8 @@
+language: c
+script: cd platforms %% build.sh
+
+addons:
+  apt:
+    packages:
+    - cmake
+    - libsdl2-dev
