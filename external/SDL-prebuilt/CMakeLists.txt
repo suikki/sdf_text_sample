@@ -173,6 +173,17 @@ elseif(EMSCRIPTEN)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -s USE_SDL=2" PARENT_SCOPE)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s USE_SDL=2 -s FULL_ES2=1" PARENT_SCOPE)
 
+elseif(APPLE)
+  find_library(SDL2-lib SDL2 REQUIRED)
+  find_path(SDL2-include SDL2/SDL.h REQUIRED)
+
+  add_library(SDL2-prebuilt INTERFACE)
+  target_link_libraries(SDL2-prebuilt
+      INTERFACE ${SDL2-lib}
+  )
+  set_target_properties(SDL2-prebuilt PROPERTIES
+      INTERFACE_INCLUDE_DIRECTORIES "${SDL2-include}/SDL2"
+  )
 
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   # Using a preinstalled SDL2-dev package in your distribution package manager.

@@ -34,7 +34,6 @@ freely, subject to the following restrictions:
 
 #define LOG_TAG "sdf_text_app"
 
-double time = 0.0;
 uint64_t timeMicros = 0;
 
 int windowWidth = 0;
@@ -317,10 +316,9 @@ void onRender() {
     if (timeMicros != 0) {
         lastFrameTimeMicros = now - timeMicros;
         double deltaT = lastFrameTimeMicros * 0.000001;
-
-        time += deltaT;
     }
     timeMicros = now;
+	double timeSeconds = timeMicros * 0.000001;
 
     // Smoothing to zoom (should be made to depend on deltaT)
     scale = (scale * 0.9f) + (targetScale * 0.1f);
@@ -422,8 +420,8 @@ void onRender() {
 
 
         char dynamicText[] = {1, '\0', '\0'};
-        dynamicText[0] += ((int) (time * 10.0)) % 127;
-        dynamicText[1] += ((int) (time * 15.0)) % 128;
+        dynamicText[0] += ((int) (timeSeconds * 10.0)) % 127;
+        dynamicText[1] += ((int) (timeSeconds * 15.0)) % 128;
         x = fonsDrawText(fs, x, y, dynamicText, NULL);
 
         x = 0.0f;
@@ -455,7 +453,7 @@ void onRender() {
         glUniformMatrix4fv(modelViewMatrixLoc, 1, GL_FALSE, &modelView[0]);
 
         GLint timeLoc = glGetUniformLocation(shaderTextSdfEffects, "time");
-        glUniform1f(timeLoc, (float) time);
+        glUniform1f(timeLoc, (float) timeSeconds);
 
         fonsClearState(fs);
         fonsSetFont(fs, fontSdfEffects);
