@@ -1,12 +1,25 @@
+sudo: false
+git:
+  depth: 1
+
 language: c
 
-before_script:
+#compiler:
+#  - gcc
+#  - clang
+
+script:
   - cd platforms
+  - sh build.sh
 
-script: sh build.sh
-
-addons:
-  apt:
-    packages:
-    - cmake
-    - libsdl2-dev
+matrix:
+  include:
+    - os: linux
+      addons:
+        apt:
+          packages:
+            - cmake
+            - libsdl2-dev
+    - os: osx
+      before_install:
+        - brew install sdl2
