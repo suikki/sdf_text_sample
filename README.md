@@ -4,6 +4,8 @@ render text that can be scaled freely while still appearing sharp.
 
 Tested on linux, windows, android and emscripten.
 
+See the online [demo](https://suikki.github.io/sdf_text_sample/demo/).
+
 ## Building
 Requirements:
 - cmake 3.2 or newer
