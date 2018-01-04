@@ -303,7 +303,7 @@ void onPointerEvent(OKAPP_PointerEvent pointerEvent) {
         }
 
     } else if (pointerEvent.eventType == OKAPP_POINTER_SCROLL) {
-        targetScale *= 1.0f + (pointerEvent.y * 0.15);
+        targetScale *= 1.0f + (pointerEvent.y * 0.15f);
         if (targetScale > 100.0f) {
             targetScale = 100.0f;
         }
@@ -494,7 +494,7 @@ void onRender() {
         // Show the cache texture atlas in the right edge of the window.
         int atlasW, atlasH;
         fonsGetAtlasSize(fs, &atlasW, &atlasH);
-        okgl_matrixSetTranslation(modelView, windowWidth - atlasW, 0.0f, 0.0f);
+        okgl_matrixSetTranslation(modelView, (float) windowWidth - atlasW, 0.0f, 0.0f);
 
         GLint modelViewMatrixLoc = glGetUniformLocation(shaderText, "modelView");
         glUniformMatrix4fv(modelViewMatrixLoc, 1, GL_FALSE, &modelView[0]);

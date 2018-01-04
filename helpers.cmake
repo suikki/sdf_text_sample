@@ -51,11 +51,6 @@ if(EMSCRIPTEN)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s TOTAL_MEMORY=67108864")
 endif()
 
-if(MSVC)
-  # Disabling some msvc warnings for now. Should go through these and fix sometime.
-  add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-endif()
-
 if(MINGW)
   # Linking standard libs statically to reduce dll clutter.
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static -static-libstdc++")

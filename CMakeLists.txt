@@ -93,8 +93,18 @@ endif()
 target_include_directories(${targetName} PUBLIC ${projectIncludeDirs})
 target_link_libraries(${targetName} ${projectLinkLibs} )
 
+
 # Using C99 standard.
 set_property(TARGET ${targetName} PROPERTY C_STANDARD 99)
+
+# Enabling/disabling compiler warnings.
+if(CMAKE_COMPILER_IS_GNUCC)
+  target_compile_options(${targetName} PRIVATE "-Wall" "-Wextra" "-pedantic" "-Wno-unused-function" "-Wno-unused-parameter")
+elseif(MSVC)
+  #target_compile_options(${targetName} PRIVATE "/W4")
+  # Disabling some MSVC warnings for now. Should go through these and fix sometime.
+  target_compile_definitions(${targetName} PRIVATE "_CRT_SECURE_NO_WARNINGS")
+endif()
 
 #
 # This will automatically copy any predefined binary dependencies to the output dir
