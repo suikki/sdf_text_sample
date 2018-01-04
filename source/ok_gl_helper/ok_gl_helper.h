@@ -136,7 +136,6 @@ OKGL_DEF const char* okgl_getErrorString(unsigned int error) {
 OKGL_DEF GLint okgl_getInt(GLenum pname) {
     GLint value;
     glGetIntegerv(pname, &value);
-    OKGL_CHECK_ERROR();
     return value;
 }
 
@@ -175,13 +174,17 @@ OKGL_DEF void okgl_logInfo() {
     oklog_i(OKGL_LOG_TAG, "  renderer: %s", glGetString(GL_RENDERER));
     oklog_i(OKGL_LOG_TAG, "  vendor: %s", glGetString(GL_VENDOR));
     oklog_i(OKGL_LOG_TAG, "  glsl: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
-    oklog_i(OKGL_LOG_TAG, "  framebuffer: RGB %d%d%d alpha: %d depth: %d stencil: %d",
-            okgl_getInt(GL_RED_BITS), okgl_getInt(GL_GREEN_BITS), okgl_getInt(GL_BLUE_BITS),
-            okgl_getInt(GL_ALPHA_BITS), okgl_getInt(GL_DEPTH_BITS), okgl_getInt(GL_STENCIL_BITS));
     oklog_i(OKGL_LOG_TAG, "  multisampling: buffers=%d samples=%d\n", okgl_getInt(GL_SAMPLE_BUFFERS), okgl_getInt(GL_SAMPLES));
     oklog_i(OKGL_LOG_TAG, "  texture image units: %d\n", okgl_getInt(GL_MAX_TEXTURE_IMAGE_UNITS));
     oklog_i(OKGL_LOG_TAG, "  max texture size: %d\n", okgl_getInt(GL_MAX_TEXTURE_SIZE));
     oklog_i(OKGL_LOG_TAG, "  max vertex attribs: %d\n", okgl_getInt(GL_MAX_VERTEX_ATTRIBS));
+
+    if (glMajorVersion < 4) {
+        oklog_i(OKGL_LOG_TAG, "  framebuffer: RGB %d%d%d alpha: %d depth: %d stencil: %d",
+                okgl_getInt(GL_RED_BITS), okgl_getInt(GL_GREEN_BITS), okgl_getInt(GL_BLUE_BITS),
+                okgl_getInt(GL_ALPHA_BITS), okgl_getInt(GL_DEPTH_BITS), okgl_getInt(GL_STENCIL_BITS));
+    }
+
     OKGL_CHECK_ERROR();
 
     {
@@ -329,10 +332,21 @@ OKGL_DEF char* okgl_convertVertexShader(const char* shaderString,
                 "define mediump\n" \
                 "define highp\n";
 
-    } else if (outputMajorVersion >= 3) {
+    } else if (outputMajorVersion == 3) {
         // Transform version 120 -> 130 (Somewhat. Probably more stuff missing still).
         preamble =
                 "#version 130\n" \
+                "#define lowp\n" \
+                "#define mediump\n" \
+                "#define highp\n" \
+                "\n" \
+                "#define attribute in\n" \
+                "#define varying out\n\n";
+
+    } else if (outputMajorVersion >= 4) {
+        // Transform version 120 -> 130 (Somewhat. Probably more stuff missing still).
+        preamble =
+                "#version 400 core\n" \
                 "#define lowp\n" \
                 "#define mediump\n" \
                 "#define highp\n" \
@@ -395,10 +409,25 @@ OKGL_DEF char* okgl_convertFragmentShader(const char* shaderString,
                 "define mediump\n" \
                 "define highp\n";
 
-    } else if (outputMajorVersion >= 3) {
+    } else if (outputMajorVersion == 3) {
         // Transform version 120 -> 130 (Somewhat. Probably more stuff missing still).
         preamble =
                 "#version 130\n" \
+                "#define lowp\n" \
+                "#define mediump\n" \
+                "#define highp\n" \
+                "\n" \
+                "out vec4 fragmentOut;\n" \
+                "\n" \
+                "#define varying in\n" \
+                "#define texture2D(a, b) texture(a, b)\n" \
+                "#define textureCube(a, b) texture(a, b)\n" \
+                "#define gl_FragColor fragmentOut\n\n";
+
+    } else if (outputMajorVersion >= 4) {
+        // Transform version 120 -> 400 (Somewhat. Probably more stuff missing still).
+        preamble =
+                "#version 400 core\n" \
                 "#define lowp\n" \
                 "#define mediump\n" \
                 "#define highp\n" \
