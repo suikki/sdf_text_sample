@@ -34,6 +34,7 @@ freely, subject to the following restrictions:
 
 #define LOG_TAG "sdf_text_app"
 
+uint64_t timeOffsetMicros = 0;
 uint64_t timeMicros = 0;
 
 int windowWidth = 0;
@@ -313,17 +314,19 @@ void onRender() {
     // Some kind of simple time measurement.
     uint64_t now = okapp_getTimerMicros();
     uint64_t lastFrameTimeMicros = 0;
-    double deltaT = 0.0;
-    if (timeMicros != 0) {
+    if (timeOffsetMicros == 0) {
+        timeOffsetMicros = now;
+    } else {
         lastFrameTimeMicros = now - timeMicros;
-        deltaT = lastFrameTimeMicros * 0.000001;
     }
     timeMicros = now;
-    double timeSeconds = timeMicros * 0.000001;
+    // Floats will lose precision after time get bigger, but this is good enough for this demo.
+    float deltaT = (float) (lastFrameTimeMicros * 0.000001);
+    float timeSeconds = (float) ((timeMicros - timeOffsetMicros) * 0.000001);
 
     // Smoothing the zoom a bit.
-    if (deltaT > 0.0) {
-        float smoothing = powf(0.9f, (float) (deltaT * 60.0));
+    if (deltaT > 0.0f) {
+        float smoothing = powf(0.9f, (float) (deltaT * 60.0f));
         scale = (targetScale * (1.0f - smoothing)) + (scale * smoothing);
     }
 
@@ -456,7 +459,7 @@ void onRender() {
         glUniformMatrix4fv(modelViewMatrixLoc, 1, GL_FALSE, &modelView[0]);
 
         GLint timeLoc = glGetUniformLocation(shaderTextSdfEffects, "time");
-        glUniform1f(timeLoc, (float) timeSeconds);
+        glUniform1f(timeLoc, timeSeconds);
 
         fonsClearState(fs);
         fonsSetFont(fs, fontSdfEffects);
@@ -552,7 +555,7 @@ void onRender() {
         x = 5.0f;
         fonsSetColor(fs, glfonsRGBA(57, 57, 57, 255));
         char fps[10];
-        snprintf(fps, 10, "%.2f", (1.0 / deltaT));
+        snprintf(fps, 10, "%.2f", (1.0f / deltaT));
         x += fonsDrawText(fs, x, y, "fps: ", NULL);
         fonsDrawText(fs, x, y, fps, NULL);
     }
