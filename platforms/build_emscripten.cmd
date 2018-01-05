@@ -1,9 +1,9 @@
 @echo off
 setlocal
-set PROJECT_DIR=%~dp0\..
+set PROJECT_DIR=%~dp0..
 set BUILD_DIR=%PROJECT_DIR%\build\emscripten
 
-:: Setup the build environment
+:: Find emscripten
 if exist "%EMSCRIPTEN_HOME%\emsdk.bat" goto emscripten_ok
 echo Emscripten not found or location not defined (EMSCRIPTEN_HOME="%EMSCRIPTEN_HOME%")
 goto error

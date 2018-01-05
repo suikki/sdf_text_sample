@@ -49,6 +49,9 @@ if(EMSCRIPTEN)
   # Embedding and mapping files at from_path@to_path
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --preload-file ../../assets@assets")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s TOTAL_MEMORY=67108864")
+
+  # Use webassembly
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s WASM=1")
 endif()
 
 if(MINGW)
@@ -72,6 +75,11 @@ endif()
 # Create a nicer name for the current target platform.
 #
 function(get_target_system)
+  if(EMSCRIPTEN)
+    set(targetSystem "web" PARENT_SCOPE)
+    return()
+  endif()
+
   # Check for 64 or 32 bit build target
   if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     set(targetBits "64")
