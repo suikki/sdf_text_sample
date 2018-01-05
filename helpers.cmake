@@ -52,6 +52,9 @@ if(EMSCRIPTEN)
 
   # Use webassembly
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s WASM=1")
+
+  # Use a custom html file template.
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --shell-file ../../platforms/emscripten/html/shell.html")
 endif()
 
 if(MINGW)

@@ -1,6 +1,6 @@
 @echo off
 setlocal
-set PROJECT_DIR=%~dp0..
+set PROJECT_DIR=%~dp0..\..
 set BIN_DIR=%PROJECT_DIR%\bin\web
 
 :: Find emscripten

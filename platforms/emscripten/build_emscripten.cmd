@@ -1,14 +1,15 @@
 @echo off
 setlocal
-set PROJECT_DIR=%~dp0..
+set PROJECT_DIR=%~dp0..\..
 set BUILD_DIR=%PROJECT_DIR%\build\emscripten
 
 :: Find emscripten
-if exist "%EMSCRIPTEN_HOME%\emsdk.bat" goto emscripten_ok
-echo Emscripten not found or location not defined (EMSCRIPTEN_HOME="%EMSCRIPTEN_HOME%")
+if exist "%EMSCRIPTEN_HOME%\emsdk_env.bat" goto emscripten_ok
+if exist "%EMSDK%\emsdk_env.bat" set EMSCRIPTEN_HOME="%EMSDK%" && goto emscripten_ok
+echo Emscripten not found or location not defined (EMSDK="%EMSDK%")
 goto error
 :emscripten_ok
-call "%EMSCRIPTEN_HOME%\emsdk.bat" activate latest
+call "%EMSCRIPTEN_HOME%\emsdk_env.bat"
 
 
 :: Build debug version
