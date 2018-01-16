@@ -20,17 +20,18 @@ freely, subject to the following restrictions:
 
 
 //
-// Using a separate compilation unit for header only library implementations
-// to not pollute the app too much.
+// Using this separate compilation unit for header only library implementations
+// to prevent polluting the app with all the implementation symbols.
 //
 
 #define OKLOG_IMPLEMENTATION
 #define OKAPP_IMPLEMENTATION
-#define OKGL_IMPLEMENTATION
+#define OKGL_HELPER_IMPLEMENTATION
 
-#include "ok_platform_wrapper/ok_log.h"
-#include "ok_platform_wrapper/ok_app.h"
-#include "ok_gl_helper/ok_gl_helper.h"
+// NOTE: if you include the logging library before the others they will log too.
+#include "okwrapper/oklog.h"
+#include "okwrapper/okapp.h"
+#include "okwrapper/okgl_helper.h"
 
 
 //
@@ -38,7 +39,7 @@ freely, subject to the following restrictions:
 //
 #define FONTSTASH_IMPLEMENTATION
 
-#if (OK_OPENGL_ES_MAJOR_VERSION == 2)
+#if (OKGL_OPENGL_ES_MAJOR_VERSION == 2)
 #define GLFONTSTASH_IMPLEMENTATION_ES2
 #else
 #define GLFONTSTASH_IMPLEMENTATION

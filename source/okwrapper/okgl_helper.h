@@ -18,37 +18,45 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
+//
+// Do this:
+//   #define OKGL_HELPER_IMPLEMENTATION
+// before you include this file in *one* C or C++ file to create the
+// implementation.
+//
+// i.e. it should look like this:
+// #define OKGL_HELPER_IMPLEMENTATION
+// #include "okwrapper/okgl_helper.h"
+//
+//
+// This is a header only library containing some very basic OpenGL helper
+// functions. E.g. for creating shaders.
+//
+// Note that you need to have the define before the file might be included from
+// other included files too, because the include guard prevents including later
+// with the implementation. We are not using a separate guard for the
+// implementation here to take advantage of any include guard optimizations by
+// the compiler (https://gcc.gnu.org/onlinedocs/cppinternals/Guard-Macros.html)
+//
+//
+// # Revision history
+//      0.1   (2018-01-16) Not officially released.
+//
+//
 
-/*
- * This is a header only library containing some very basic OpenGL helper
- * functions. E.g. for creating shaders.
- *
- *
- * To build the implementation OKGL_IMPLEMENTATION needs to
- * be defined in exactly one compilation unit before including this file:
- *
- * #define OKGL_IMPLEMENTATION
- * #include "ok_gl_helper/ok_gl_helper.h"
- *
- * Note that you need to have the define before the file might be included from other included files too, because the
- * include guard prevents including later with the implementation. We are not using a separate guard for the
- * implementation here to take advantage of any include guard optimizations by the compiler
- * (https://gcc.gnu.org/onlinedocs/cppinternals/Guard-Macros.html)
- */
-
-#ifndef OK_GL_HELPER_H_
-#define OK_GL_HELPER_H_
+#ifndef OKWRAPPER_OKGL_HELPER_H_
+#define OKWRAPPER_OKGL_HELPER_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "ok_platform_wrapper/ok_opengl.h"
+#include "okgl.h"
 
 #ifdef OKGL_STATIC
-#define OKGL_DEF static
+#define OKIMPLGL_DEF static
 #else
-#define OKGL_DEF extern
+#define OKIMPLGL_DEF extern
 #endif
 
 #ifdef DEBUG
@@ -59,57 +67,105 @@ extern "C" {
 #define OKGL_CHECK_ERROR_ALWAYS(...) okgl_checkError()
 #endif
 
-OKGL_DEF unsigned int okgl_checkError();
-OKGL_DEF unsigned int okgl_checkErrorDebug(const char* file, int line);
-OKGL_DEF const char* okgl_getErrorString(unsigned int error);
+OKIMPLGL_DEF int okgl_init();
 
-OKGL_DEF GLint okgl_getInt(GLenum pname);
-OKGL_DEF const char* okgl_getVersion(GLint* glMajorVersion, GLint* glMinorVersion);
-OKGL_DEF void okgl_logInfo();
+OKIMPLGL_DEF unsigned int okgl_checkError();
+OKIMPLGL_DEF unsigned int okgl_checkErrorDebug(const char* file, int line);
+OKIMPLGL_DEF const char* okgl_getErrorString(unsigned int error);
 
-OKGL_DEF void okgl_matrixSetTranslation(GLfloat* matrix, GLfloat x, GLfloat y, GLfloat z);
-OKGL_DEF void okgl_matrixSetscale(GLfloat* matrix, GLfloat x, GLfloat y, GLfloat z);
-OKGL_DEF void okgl_unitMatrix(GLfloat* matrix);
+OKIMPLGL_DEF GLint okgl_getInt(GLenum pname);
+OKIMPLGL_DEF const char* okgl_getVersion(GLint* glMajorVersion, GLint* glMinorVersion);
+OKIMPLGL_DEF void okgl_logInfo();
 
-OKGL_DEF void okgl_projection2d(GLfloat* projectionMatrix, GLfloat left, GLfloat right, GLfloat bottom, GLfloat top);
+OKIMPLGL_DEF void okgl_matrixSetTranslation(GLfloat* matrix, GLfloat x, GLfloat y, GLfloat z);
+OKIMPLGL_DEF void okgl_matrixSetscale(GLfloat* matrix, GLfloat x, GLfloat y, GLfloat z);
+OKIMPLGL_DEF void okgl_unitMatrix(GLfloat* matrix);
 
-OKGL_DEF GLuint okgl_createShader(const char* shaderString, GLenum shaderType);
-OKGL_DEF GLuint okgl_linkProgram(const char* vertexShaderString, const char* fragmentShaderString);
+OKIMPLGL_DEF void okgl_projection2d(GLfloat* projectionMatrix, GLfloat left, GLfloat right, GLfloat bottom, GLfloat top);
+
+OKIMPLGL_DEF GLuint okgl_createShader(const char* shaderString, GLenum shaderType);
+OKIMPLGL_DEF GLuint okgl_linkProgram(const char* vertexShaderString, const char* fragmentShaderString);
 
 
-/*
- * ----------------------------------------------------------------------------
- * Implementation starts here.
- * ----------------------------------------------------------------------------
- */
+//
+// Don't use logging if the oklog logging lib was not found.
+//
+#if !defined(OKWRAPPER_OKLOG_H_) || defined(OKGL_NO_LOGGING)
+#define OKIMPLGL_EMPTY_FUNC(...) do {} while (0)
+#define okimplgl__logDebug(tag, ...) OKIMPLGL_EMPTY_FUNC(tag, __VA_ARGS__)
+#define okimplgl__logInfo(tag, ...) OKIMPLGL_EMPTY_FUNC(tag, __VA_ARGS__)
+#define okimplgl__logWarning(tag, ...) OKIMPLGL_EMPTY_FUNC(tag, __VA_ARGS__)
+#define okimplgl__logError(tag, ...) OKIMPLGL_EMPTY_FUNC(tag, __VA_ARGS__)
+#else
+#define okimplgl__logDebug(tag, ...) oklog_debug(tag, __VA_ARGS__)
+#define okimplgl__logInfo(tag, ...) oklog_info(tag, __VA_ARGS__)
+#define okimplgl__logWarning(tag, ...) oklog_warning(tag, __VA_ARGS__)
+#define okimplgl__logError(tag, ...) oklog_error(tag, __VA_ARGS__)
+#endif
 
-#ifdef OKGL_IMPLEMENTATION
 
-#include "ok_platform_wrapper/ok_log.h"
+//
+// ----------------------------------------------------------------------------
+// Implementation starts here.
+// ----------------------------------------------------------------------------
+//
 
-#define OKGL_DEF_INTERNAL static
+#ifdef OKGL_HELPER_IMPLEMENTATION
 
-#define OKGL_LOG_TAG "ok_gl_helper"
+#include <stdlib.h>
 
-OKGL_DEF unsigned int okgl_checkError() {
+#define OKIMPLGL_DEF_INTERNAL static
+#define OKIMPLGL_UNUSED(expr) do { (void)(expr); } while (0)
+
+#define OKIMPLGL_LOG_TAG "okgl_helper"
+
+// TODO: check if init is called properly in each function that needs it
+// or call it automatically maybe
+// or possibly just in debug mode
+OKIMPLGL_DEF int okgl_init() {
+#if !OKGL_OPENGL_ES
+    // Load OpenGL extensions using GLEW.
+    GLenum err = glewInit();
+    if (GLEW_OK != err) {
+        okimplgl__logError(OKIMPLGL_LOG_TAG, "Error loading glew: %s", glewGetErrorString(err));
+        return 0;
+    }
+    okimplgl__logDebug(OKIMPLGL_LOG_TAG, "GLEW %s loaded.", glewGetString(GLEW_VERSION));
+
+    // GLEW sometimes generates GL errors. Ignore them.
+    glGetError();
+
+    // Check that opengl 2.1 is supported.
+    if (!GLEW_VERSION_2_1) {
+        okimplgl__logError(OKIMPLGL_LOG_TAG, "At least Opengl 2.1 is required to run this program.");
+        return 0;
+    }
+#endif
+    return 1;
+}
+
+OKIMPLGL_DEF unsigned int okgl_checkError() {
     GLenum error = glGetError();
     if (error) {
-        oklog_e(OKGL_LOG_TAG, "glGetError(%d)\n", error);
+        okimplgl__logError(OKIMPLGL_LOG_TAG, "glGetError(%d)\n", error);
     }
 
     return error;
 }
 
-OKGL_DEF unsigned int okgl_checkErrorDebug(const char* file, int line) {
+OKIMPLGL_DEF unsigned int okgl_checkErrorDebug(const char* file, int line) {
+    OKIMPLGL_UNUSED(file); // when logging is disabled.
+    OKIMPLGL_UNUSED(line); // when logging is disabled.
+
     GLenum error = glGetError();
     if (error) {
-        oklog_e(OKGL_LOG_TAG, "glGetError(%d): %s @ %s line %d\n", error, okgl_getErrorString(error), file, line);
+        okimplgl__logError(OKIMPLGL_LOG_TAG, "glGetError(%d): %s @ %s line %d\n", error, okgl_getErrorString(error), file, line);
     }
 
     return error;
 }
 
-OKGL_DEF const char* okgl_getErrorString(unsigned int error) {
+OKIMPLGL_DEF const char* okgl_getErrorString(unsigned int error) {
     switch (error) {
         case GL_NO_ERROR:
             return "GL_NO_ERROR";
@@ -133,17 +189,17 @@ OKGL_DEF const char* okgl_getErrorString(unsigned int error) {
     return "<unknown>";
 }
 
-OKGL_DEF GLint okgl_getInt(GLenum pname) {
+OKIMPLGL_DEF GLint okgl_getInt(GLenum pname) {
     GLint value;
     glGetIntegerv(pname, &value);
     return value;
 }
 
-OKGL_DEF const char* okgl_getVersion(GLint* glMajorVersion, GLint* glMinorVersion) {
+OKIMPLGL_DEF const char* okgl_getVersion(GLint* glMajorVersion, GLint* glMinorVersion) {
 
     const char* version = (const char*) glGetString(GL_VERSION);
 
-#if defined(OK_OPENGL_ES) && !defined(GL_MAJOR_VERSION) || !defined(GL_MINOR_VERSION)
+#if OKGL_OPENGL_ES && (!defined(GL_MAJOR_VERSION) || !defined(GL_MINOR_VERSION))
     // NOTE: this is for old opengl ES versions that dont have GL_MAJOR_VERSION and GL_MINOR_VERSION
     // Assuming it's OpenGL ES2 then (not supporting ES1).
     *glMajorVersion = 2;
@@ -157,32 +213,33 @@ OKGL_DEF const char* okgl_getVersion(GLint* glMajorVersion, GLint* glMinorVersio
     return version;
 }
 
-OKGL_DEF void okgl_logInfo() {
+OKIMPLGL_DEF void okgl_logInfo() {
     GLint glMajorVersion;
     GLint glMinorVersion;
     const char* version;
 
     version = okgl_getVersion(&glMajorVersion, &glMinorVersion);
+    OKIMPLGL_UNUSED(version); // Silence a warning when no logging.
 
-#ifdef OK_OPENGL_ES
-    oklog_i(OKGL_LOG_TAG, "OpenGL ES %d.%d:", glMajorVersion, glMinorVersion);
+#if OKGL_OPENGL_ES
+    okimplgl__logInfo(OKIMPLGL_LOG_TAG, "OpenGL ES %d.%d:", glMajorVersion, glMinorVersion);
 #else
-    oklog_i(OKGL_LOG_TAG, "OpenGL %d.%d:", glMajorVersion, glMinorVersion);
+    okimplgl__logInfo(OKIMPLGL_LOG_TAG, "OpenGL %d.%d:", glMajorVersion, glMinorVersion);
 #endif
 
-    oklog_i(OKGL_LOG_TAG, "  version: %s", version);
-    oklog_i(OKGL_LOG_TAG, "  renderer: %s", glGetString(GL_RENDERER));
-    oklog_i(OKGL_LOG_TAG, "  vendor: %s", glGetString(GL_VENDOR));
-    oklog_i(OKGL_LOG_TAG, "  glsl: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
-    oklog_i(OKGL_LOG_TAG, "  multisampling: buffers=%d samples=%d\n", okgl_getInt(GL_SAMPLE_BUFFERS), okgl_getInt(GL_SAMPLES));
-    oklog_i(OKGL_LOG_TAG, "  texture image units: %d\n", okgl_getInt(GL_MAX_TEXTURE_IMAGE_UNITS));
-    oklog_i(OKGL_LOG_TAG, "  max texture size: %d\n", okgl_getInt(GL_MAX_TEXTURE_SIZE));
-    oklog_i(OKGL_LOG_TAG, "  max vertex attribs: %d\n", okgl_getInt(GL_MAX_VERTEX_ATTRIBS));
+    okimplgl__logInfo(OKIMPLGL_LOG_TAG, "  version: %s", version);
+    okimplgl__logInfo(OKIMPLGL_LOG_TAG, "  renderer: %s", glGetString(GL_RENDERER));
+    okimplgl__logInfo(OKIMPLGL_LOG_TAG, "  vendor: %s", glGetString(GL_VENDOR));
+    okimplgl__logInfo(OKIMPLGL_LOG_TAG, "  glsl: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
+    okimplgl__logInfo(OKIMPLGL_LOG_TAG, "  multisampling: buffers=%d samples=%d", okgl_getInt(GL_SAMPLE_BUFFERS), okgl_getInt(GL_SAMPLES));
+    okimplgl__logInfo(OKIMPLGL_LOG_TAG, "  texture image units: %d", okgl_getInt(GL_MAX_TEXTURE_IMAGE_UNITS));
+    okimplgl__logInfo(OKIMPLGL_LOG_TAG, "  max texture size: %d", okgl_getInt(GL_MAX_TEXTURE_SIZE));
+    okimplgl__logInfo(OKIMPLGL_LOG_TAG, "  max vertex attribs: %d", okgl_getInt(GL_MAX_VERTEX_ATTRIBS));
 
     if (glMajorVersion < 4) {
-        oklog_i(OKGL_LOG_TAG, "  framebuffer: RGB %d%d%d alpha: %d depth: %d stencil: %d",
-                okgl_getInt(GL_RED_BITS), okgl_getInt(GL_GREEN_BITS), okgl_getInt(GL_BLUE_BITS),
-                okgl_getInt(GL_ALPHA_BITS), okgl_getInt(GL_DEPTH_BITS), okgl_getInt(GL_STENCIL_BITS));
+        okimplgl__logInfo(OKIMPLGL_LOG_TAG, "  framebuffer: RGB %d%d%d alpha: %d depth: %d stencil: %d",
+                          okgl_getInt(GL_RED_BITS), okgl_getInt(GL_GREEN_BITS), okgl_getInt(GL_BLUE_BITS),
+                          okgl_getInt(GL_ALPHA_BITS), okgl_getInt(GL_DEPTH_BITS), okgl_getInt(GL_STENCIL_BITS));
     }
 
     OKGL_CHECK_ERROR();
@@ -192,34 +249,34 @@ OKGL_DEF void okgl_logInfo() {
         GLint* supportedFormats = malloc(sizeof(GLint) * supportedTextureFormatCount);
 
         glGetIntegerv(GL_COMPRESSED_TEXTURE_FORMATS, supportedFormats);
-        oklog_i(OKGL_LOG_TAG, "  some supported texture compression formats:\n");
+        okimplgl__logInfo(OKIMPLGL_LOG_TAG, "  some supported texture compression formats:\n");
         for (int i = 0; i < supportedTextureFormatCount; ++i) {
             switch (supportedFormats[i]) {
                 case 0x8D64: // GL_ETC1_RGB8_OES
-                    oklog_i(OKGL_LOG_TAG, "    ETC1\n");
+                    okimplgl__logInfo(OKIMPLGL_LOG_TAG, "    ETC1");
                     break;
 
                 case 0x9278: // GL_COMPRESSED_RGBA8_ETC2_EAC
-                    oklog_i(OKGL_LOG_TAG, "    ETC2\n");
+                    okimplgl__logInfo(OKIMPLGL_LOG_TAG, "    ETC2");
                     break;
 
                 case 0x93B0: // GL_COMPRESSED_RGBA_ASTC_4x4_KHR
-                    oklog_i(OKGL_LOG_TAG, "    ASTC\n");
+                    okimplgl__logInfo(OKIMPLGL_LOG_TAG, "    ASTC");
                     break;
 
                 case 0x8C00: // GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG
-                    oklog_i(OKGL_LOG_TAG, "    PVRTC1\n");
+                    okimplgl__logInfo(OKIMPLGL_LOG_TAG, "    PVRTC1");
                     break;
 
                 case 0x9137: // GL_COMPRESSED_RGBA_PVRTC_2BPPV2_IMG
-                    oklog_i(OKGL_LOG_TAG, "    PVRTC2\n");
+                    okimplgl__logInfo(OKIMPLGL_LOG_TAG, "    PVRTC2");
                     break;
 
                 default:
                     break;
             }
 
-            //oklog_i(SIMPLEGL_LOG_TAG, "  0x%X\n", supportedFormats[i]);
+            //logc_i(OKIMPLGL_LOG_TAG, "  0x%X\n", supportedFormats[i]);
         }
 
         free(supportedFormats);
@@ -227,7 +284,7 @@ OKGL_DEF void okgl_logInfo() {
     }
 }
 
-OKGL_DEF void okgl_unitMatrix(GLfloat* matrix) {
+OKIMPLGL_DEF void okgl_unitMatrix(GLfloat* matrix) {
     matrix[0] = 1.0f;
     matrix[1] = 0.0f;
     matrix[2] = 0.0f;
@@ -249,18 +306,18 @@ OKGL_DEF void okgl_unitMatrix(GLfloat* matrix) {
     matrix[15] = 1.0f;
 }
 
-OKGL_DEF void okgl_matrixSetTranslation(GLfloat* matrix, GLfloat x, GLfloat y, GLfloat z) {
+OKIMPLGL_DEF void okgl_matrixSetTranslation(GLfloat* matrix, GLfloat x, GLfloat y, GLfloat z) {
     matrix[12] = x;
     matrix[13] = y;
     matrix[14] = z;
 }
-OKGL_DEF void okgl_matrixSetscale(GLfloat* matrix, GLfloat x, GLfloat y, GLfloat z) {
+OKIMPLGL_DEF void okgl_matrixSetscale(GLfloat* matrix, GLfloat x, GLfloat y, GLfloat z) {
     matrix[0] = x;
     matrix[5] = y;
     matrix[10] = z;
 }
 
-OKGL_DEF void okgl_projection2d(GLfloat* projectionMatrix, GLfloat left, GLfloat right, GLfloat bottom, GLfloat top) {
+OKIMPLGL_DEF void okgl_projection2d(GLfloat* projectionMatrix, GLfloat left, GLfloat right, GLfloat bottom, GLfloat top) {
     GLfloat zRange = (left - right) * 2.0f;
     GLfloat zFar = zRange;
     GLfloat zNear = -zRange;
@@ -286,15 +343,17 @@ OKGL_DEF void okgl_projection2d(GLfloat* projectionMatrix, GLfloat left, GLfloat
     projectionMatrix[15] = 1.0f;
 }
 
-/*
- * With some minor changes OpenGL ES 2 shaders can be converted to ES 3 / gl3 core shaders.
- * This way the same shader can be used on multiple different platforms.
- *
- * Needs to be freed by the called.
- */
-OKGL_DEF char* okgl_convertVertexShader(const char* shaderString,
-                                        int outputMajorVersion,
-                                        int outputMinorVersion) {
+//
+// With some minor changes OpenGL ES 2 shaders can be converted to ES 3 / gl3 core shaders.
+// This way the same shader can be used on multiple different platforms.
+//
+// Needs to be freed by the called.
+//
+OKIMPLGL_DEF char* okgl_convertVertexShader(const char* shaderString,
+                                            int outputMajorVersion,
+                                            int outputMinorVersion) {
+    OKIMPLGL_UNUSED(outputMinorVersion);
+
     char* preamble = "";
     char* output;
 
@@ -304,7 +363,7 @@ OKGL_DEF char* okgl_convertVertexShader(const char* shaderString,
 
     // TODO: better mappings for different versions.
 
-#ifdef OK_OPENGL_ES
+#if OKGL_OPENGL_ES
     if (outputMajorVersion == 2) {
         preamble =
                 "#version 100\n" \
@@ -365,9 +424,11 @@ OKGL_DEF char* okgl_convertVertexShader(const char* shaderString,
     return output;
 }
 
-OKGL_DEF char* okgl_convertFragmentShader(const char* shaderString,
-                                          int outputMajorVersion,
-                                          int outputMinorVersion) {
+OKIMPLGL_DEF char* okgl_convertFragmentShader(const char* shaderString,
+                                              int outputMajorVersion,
+                                              int outputMinorVersion) {
+    OKIMPLGL_UNUSED(outputMinorVersion);
+
     char* preamble = "";
     char* output;
 
@@ -377,7 +438,7 @@ OKGL_DEF char* okgl_convertFragmentShader(const char* shaderString,
 
     // TODO: better mappings for different versions.
 
-#ifdef OK_OPENGL_ES
+#if OKGL_OPENGL_ES
     if (outputMajorVersion == 2) {
         preamble =
                 "#version 100\n" \
@@ -450,8 +511,8 @@ OKGL_DEF char* okgl_convertFragmentShader(const char* shaderString,
     return output;
 }
 
-/* Object is either a shader or a linked program. Operation should be GL_COMPILE_STATUS or GL_LINK_STATUS. */
-OKGL_DEF_INTERNAL GLboolean okgl__checkStatus(GLuint object, GLenum operation) {
+// Object is either a shader or a linked program. Operation should be GL_COMPILE_STATUS or GL_LINK_STATUS.
+OKIMPLGL_DEF_INTERNAL GLboolean okimplgl__checkStatus(GLuint object, GLenum operation) {
     GLint operationStatus;
 
     if (operation == GL_COMPILE_STATUS) {
@@ -461,7 +522,7 @@ OKGL_DEF_INTERNAL GLboolean okgl__checkStatus(GLuint object, GLenum operation) {
     }
 
     if (!operationStatus) {
-        oklog_e(OKGL_LOG_TAG, "Error compiling shader");
+        okimplgl__logError(OKIMPLGL_LOG_TAG, "Error compiling shader");
 
         GLint infoLogLength = 0;
         if (operation == GL_COMPILE_STATUS) {
@@ -477,7 +538,7 @@ OKGL_DEF_INTERNAL GLboolean okgl__checkStatus(GLuint object, GLenum operation) {
             } else {
                 glGetProgramInfoLog(object, infoLogLength, NULL, infoLog);
             }
-            oklog_e(OKGL_LOG_TAG, "\n%s", infoLog);
+            okimplgl__logError(OKIMPLGL_LOG_TAG, "\n%s", infoLog);
 
             free(infoLog);
         }
@@ -487,7 +548,7 @@ OKGL_DEF_INTERNAL GLboolean okgl__checkStatus(GLuint object, GLenum operation) {
     return GL_TRUE;
 }
 
-GLuint okgl_createShader(const char* shaderString, GLenum shaderType) {
+OKIMPLGL_DEF GLuint okgl_createShader(const char* shaderString, GLenum shaderType) {
     GLuint shader;
 
     shader = glCreateShader(shaderType);
@@ -498,18 +559,18 @@ GLuint okgl_createShader(const char* shaderString, GLenum shaderType) {
 
     glShaderSource(shader, 1, &shaderString, NULL);
     glCompileShader(shader);
-    if (!okgl__checkStatus(shader, GL_COMPILE_STATUS)) {
+    if (!okimplgl__checkStatus(shader, GL_COMPILE_STATUS)) {
 
 #ifdef DEBUG
         // Print the whole problem shader with line numbering.
-        oklog_i(OKGL_LOG_TAG, "SHADER:\n");
+        okimplgl__logInfo(OKIMPLGL_LOG_TAG, "SHADER:");
         char* shaderStringTmp = malloc(sizeof(char) * (strlen(shaderString) + 1));
         strcpy(shaderStringTmp, shaderString);
 
         char* line = strtok(shaderStringTmp, "\n");
         int lineNumber = 1;
         while (line != NULL) {
-            oklog_i(OKGL_LOG_TAG, "%4d| %s\n", lineNumber, line);
+            okimplgl__logInfo(OKIMPLGL_LOG_TAG, "%4d| %s", lineNumber, line);
             line = strtok(NULL, "\n");
             lineNumber++;
         }
@@ -523,7 +584,7 @@ GLuint okgl_createShader(const char* shaderString, GLenum shaderType) {
     return shader;
 }
 
-GLuint okgl_linkProgram(const char* vertexShaderString, const char* fragmentShaderString) {
+OKIMPLGL_DEF GLuint okgl_linkProgram(const char* vertexShaderString, const char* fragmentShaderString) {
     GLuint program;
     GLint glMajorVersion, glMinorVersion;
     GLuint vertexShader = 0;
@@ -563,7 +624,7 @@ GLuint okgl_linkProgram(const char* vertexShaderString, const char* fragmentShad
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    if (!okgl__checkStatus(program, GL_LINK_STATUS)) {
+    if (!okimplgl__checkStatus(program, GL_LINK_STATUS)) {
         glDeleteProgram(program);
         return 0;
     }
@@ -571,10 +632,10 @@ GLuint okgl_linkProgram(const char* vertexShaderString, const char* fragmentShad
     return program;
 }
 
-#endif /* ifdef OKGL_IMPLEMENTATION */
+#endif // ifdef OKGL_HELPER_IMPLEMENTATION
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* ifndef OK_GL_HELPER_H_ */
+#endif // ifndef OKWRAPPER_OKGL_HELPER_H_

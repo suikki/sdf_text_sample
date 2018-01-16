@@ -21,9 +21,9 @@ freely, subject to the following restrictions:
 #include "fontstash.h"
 #include "gl3corefontstash.h"
 
-#include "ok_platform_wrapper/ok_app.h"
-#include "ok_platform_wrapper/ok_log.h"
-#include "ok_gl_helper/ok_gl_helper.h"
+#include "okwrapper/oklog.h"
+#include "okwrapper/okapp.h"
+#include "okwrapper/okgl_helper.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -145,7 +145,7 @@ int loadFonts() {
     //
     fs = glfonsCreate(512, 512, FONS_ZERO_TOPLEFT);
     if (fs == NULL) {
-        oklog_e(LOG_TAG, "Could not create font stash.\n");
+        log_e(LOG_TAG, "Could not create font stash.");
         return 0;
     }
 
@@ -159,7 +159,7 @@ int loadFonts() {
     fontDataDroidSans = NULL;
     int fontDataDroidSansSize = okapp_loadBinaryAsset(droidSansFilename, &fontDataDroidSans);
     if (fontDataDroidSansSize <= 0) {
-        oklog_e(LOG_TAG, "Error reading font file: '%s'", droidSansFilename);
+        log_e(LOG_TAG, "Error reading font file: '%s'", droidSansFilename);
         return 0;
     }
 
@@ -167,7 +167,7 @@ int loadFonts() {
     fontDataDroidSansJapanese = NULL;
     int fontDataDroidSansJapaneseSize = okapp_loadBinaryAsset(droidSansJapaneseFilename, &fontDataDroidSansJapanese);
     if (fontDataDroidSansJapaneseSize <= 0) {
-        oklog_e(LOG_TAG, "Error reading font file: '%s'", droidSansJapaneseFilename);
+        log_e(LOG_TAG, "Error reading font file: '%s'", droidSansJapaneseFilename);
         return 0;
     }
 
@@ -185,7 +185,7 @@ int loadFonts() {
 
     fontNormal = fonsAddFontSdfMem(fs, "DroidSans", fontDataDroidSans, fontDataDroidSansSize, callFree, noSdf);
     if (fontNormal == FONS_INVALID) {
-        oklog_e(LOG_TAG, "Could not add font.\n");
+        log_e(LOG_TAG, "Could not add font.");
         return 0;
     }
 
@@ -199,12 +199,12 @@ int loadFonts() {
 
     fontSdf = fonsAddFontSdfMem(fs, "DroidSansSdf", fontDataDroidSans, fontDataDroidSansSize, callFree, basicSdf);
     if (fontSdf == FONS_INVALID) {
-        oklog_e(LOG_TAG, "Could not add SDF font.\n");
+        log_e(LOG_TAG, "Could not add SDF font.");
         return 0;
     } else {
         int fontJPSdf = fonsAddFontSdfMem(fs, "DroidSansSdfJP", fontDataDroidSansJapanese, fontDataDroidSansJapaneseSize, callFree, basicSdf);
         if (fontJPSdf == FONS_INVALID) {
-            oklog_e(LOG_TAG, "Could not add japanese SDF font.\n");
+            log_e(LOG_TAG, "Could not add japanese SDF font.");
             return 0;
         }
         fonsAddFallbackFont(fs, fontSdf, fontJPSdf);
@@ -219,12 +219,12 @@ int loadFonts() {
 
     fontSdfEffects = fonsAddFontSdfMem(fs, "DroidSansSdfEffects", fontDataDroidSans, fontDataDroidSansSize, callFree, effectsSdf);
     if (fontSdf == FONS_INVALID) {
-        oklog_e(LOG_TAG, "Could not add SDF font.\n");
+        log_e(LOG_TAG, "Could not add SDF font.");
         return 0;
     } else {
         int fontJPSdf = fonsAddFontSdfMem(fs, "DroidSansSdfEffectsJP", fontDataDroidSansJapanese, fontDataDroidSansJapaneseSize, callFree, effectsSdf);
         if (fontJPSdf == FONS_INVALID) {
-            oklog_e(LOG_TAG, "Could not add japanese SDF font.\n");
+            log_e(LOG_TAG, "Could not add japanese SDF font.");
             return 0;
         }
         fonsAddFallbackFont(fs, fontSdfEffects, fontJPSdf);
@@ -239,11 +239,15 @@ int loadFonts() {
 //
 
 void onStart(int argc, char* argv[]) {
-    oklog_i(LOG_TAG, "onStart");
+    oklog_parseCommandLineOptions(argc, argv);
+    log_i(LOG_TAG, "onStart");
 
     timeMicros = 0;
 
-    // Print OpenGL driver information.
+    // Initialize Open GL and print some info.
+    if (!okgl_init()) {
+        okapp_queueQuit();
+    }
     okgl_logInfo();
 
     loadShaders();
@@ -254,13 +258,13 @@ void onStart(int argc, char* argv[]) {
 }
 
 void onStop() {
-    oklog_i(LOG_TAG, "onStop");
+    log_i(LOG_TAG, "onStop");
     releaseFonts();
     releaseShaders();
 }
 
 void onSizeChanged(int width, int height) {
-    oklog_i(LOG_TAG, "onSizeChanged %d %d", width, height);
+    log_i(LOG_TAG, "onSizeChanged %d %d", width, height);
     windowWidth = width;
     windowHeight = height;
 }
@@ -271,7 +275,7 @@ void onKeyEvent(OKAPP_KeyEvent keyEvent) {
             okapp_queueQuit();
 
         } else if (keyEvent.keyCode == 'r') {
-            oklog_i(LOG_TAG, "Reloading shaders.");
+            log_i(LOG_TAG, "Reloading shaders.");
             loadShaders();
 
         } else if (keyEvent.keyCode == 'c') {
@@ -326,7 +330,7 @@ void onRender() {
 
     // Smoothing the zoom a bit.
     if (deltaT > 0.0f) {
-        float smoothing = powf(0.9f, (float) (deltaT * 60.0f));
+        float smoothing = powf(0.9f, deltaT * 60.0f);
         scale = (targetScale * (1.0f - smoothing)) + (scale * smoothing);
     }
 
@@ -564,6 +568,14 @@ void onRender() {
 }
 
 OKAPP_AppSetup okapp_setup() {
+#if defined(DEBUG)
+    oklog_setLogLevelFilter(OKLOG_LEVEL_ALL);
+    oklog_setFormat("{time_short} {level_short} {file_short}{35} {message}");
+#else
+    oklog_setLogLevelFilter(OKLOG_LEVEL_INFO);
+    oklog_setFormat("{time_short} {level_short} {category}{25} {message}");
+#endif
+
     OKAPP_AppSetup setup = {0};
     setup.defaultWindowTitle = "sdf_text";
     setup.prefWidth = 1280;
@@ -586,7 +598,7 @@ OKAPP_AppSetup okapp_setup() {
 
 void fontStashResetAtlas(FONScontext* stash, int width, int height) {
     fonsResetAtlas(stash, width, height);
-    oklog_i(LOG_TAG, "reset atlas to %d x %d\n", width, height);
+    log_i(LOG_TAG, "reset atlas to %d x %d", width, height);
 }
 
 void fontStashEexpandAtlas(FONScontext* stash) {
@@ -604,7 +616,7 @@ void fontStashEexpandAtlas(FONScontext* stash) {
         fontStashResetAtlas(stash, maxTexturesize, maxTexturesize);
     } else {
         fonsExpandAtlas(stash, w, h);
-        oklog_i(LOG_TAG, "expanded atlas to %d x %d\n", w, h);
+        log_i(LOG_TAG, "expanded atlas to %d x %d", w, h);
     }
 }
 
@@ -612,20 +624,20 @@ void fontStashError(void* userPointer, int error, int value) {
     FONScontext* stash = (FONScontext*) userPointer;
     switch (error) {
         case FONS_ATLAS_FULL:
-            oklog_i(LOG_TAG, "Font atlas full.\n");
+            log_i(LOG_TAG, "Font atlas full.");
             fontStashEexpandAtlas(stash);
             break;
         case FONS_SCRATCH_FULL:
-            oklog_e(LOG_TAG, "Font error: scratch full, tried to allocate %d\n", value);
+            log_e(LOG_TAG, "Font error: scratch full, tried to allocate %d", value);
             break;
         case FONS_STATES_OVERFLOW:
-            oklog_e(LOG_TAG, "Font error: states overflow.\n");
+            log_e(LOG_TAG, "Font error: states overflow.");
             break;
         case FONS_STATES_UNDERFLOW:
-            oklog_e(LOG_TAG, "Font error: states underflow.\n");
+            log_e(LOG_TAG, "Font error: states underflow.");
             break;
         default:
-            oklog_e(LOG_TAG, "Font error: unknown.\n");
+            log_e(LOG_TAG, "Font error: unknown.");
             break;
     }
 }

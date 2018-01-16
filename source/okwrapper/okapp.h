@@ -18,24 +18,38 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
+//
+// Do this:
+//   #define OKAPP_IMPLEMENTATION
+// before you include this file in *one* C or C++ file to create the
+// implementation.
+//
+// i.e. it should look like this:
+// #define OKAPP_IMPLEMENTATION
+// #include "okwrapper/okapp.h"
+//
+//
+// This is a header only wrapper for creating simple cross platform apps.
+// The implementation of the library is using SDL2 that needs to be linked
+// to the compiled binary.
+//
+// Note that you need to have the define before the file might be included from
+// other included files too, because the include guard prevents including later
+// with the implementation. We are not using a separate guard for the
+// implementation here to take advantage of any include guard optimizations by
+// the compiler (https://gcc.gnu.org/onlinedocs/cppinternals/Guard-Macros.html)
+//
+//
+// # Revision history
+//      0.1   (2018-01-16) Not officially released.
+//
+//
+// # Todo list
+//   - Keycodes
+//
 
-/*
- * This is a header only library for creating simple cross platform apps.
- *
- * Implementation of the library is using SDL2 that needs to be linked. To build the implementation
- * OKAPP_IMPLEMENTATION needs to be defined in exactly one compilation unit before including this file:
- *
- * #define OKAPP_IMPLEMENTATION
- * #include "ok_platform_wrapper/ok_app.h"
- *
- * Note that you need to have the define before the file might be included from other included files too, because the
- * include guard prevents including later with the implementation. We are not using a separate guard for the
- * implementation here to take advantage of any include guard optimizations by the compiler
- * (https://gcc.gnu.org/onlinedocs/cppinternals/Guard-Macros.html)
- */
-
-#ifndef OK_PLATFORM_WRAPPER_OK_APP_H_
-#define OK_PLATFORM_WRAPPER_OK_APP_H_
+#ifndef OKWRAPPER_OKAPP_H_
+#define OKWRAPPER_OKAPP_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,30 +59,30 @@ extern "C" {
 #include <stddef.h>
 
 #ifdef OKAPP_STATIC
-#define OKAPP_DEF static
+#define OKIMPLAPP_DEF static
 #else
-#define OKAPP_DEF extern
+#define OKIMPLAPP_DEF extern
 #endif
 
-typedef enum {
+typedef enum OKAPP_KeyEventType {
     OKAPP_KEY_DOWN,
     OKAPP_KEY_UP,
 } OKAPP_KeyEventType;
 
-typedef struct {
+typedef struct OKAPP_KeyEvent {
     OKAPP_KeyEventType eventType;
     int32_t keyCode;
     int32_t scanCode;
 } OKAPP_KeyEvent;
 
-typedef enum {
+typedef enum OKAPP_PointerEventType {
     OKAPP_POINTER_DOWN,
     OKAPP_POINTER_UP,
     OKAPP_POINTER_MOVE,
     OKAPP_POINTER_SCROLL,
 } OKAPP_PointerEventType;
 
-typedef struct {
+typedef struct OKAPP_PointerEvent {
     OKAPP_PointerEventType eventType;
     int sourceId;
     int index;
@@ -80,13 +94,13 @@ typedef struct {
     float deltaY;
 } OKAPP_PointerEvent;
 
-typedef enum {
+typedef enum OKAPP_WindowMode {
     OKAPP_WINDOW_MODE_WINDOWED = 0,
     OKAPP_WINDOW_MODE_FULLSCREEN_WINDOW,
     OKAPP_WINDOW_MODE_FULLSCREEN,
 } OKAPP_WindowMode;
 
-typedef struct {
+typedef struct OKAPP_AppSetup {
     void (* onStart)(int argc, char* argv[]);
     void (* onStop)();
     void (* onPause)();
@@ -103,52 +117,69 @@ typedef struct {
 } OKAPP_AppSetup;
 
 
-/*
- * Note: This function needs to be implemented by the app. The implementation must return a OKAPP_AppSetup struct filled
- * with valid information. If a callback is not used it can be NULL.
- */
+//
+// Note: This function needs to be implemented by the app. The implementation must return a OKAPP_AppSetup struct filled
+// with valid information. If a callback is not used it can be NULL.
+// 
 OKAPP_AppSetup okapp_setup();
 
 
-/*
- * The app public API declarations.
- */
-OKAPP_DEF void okapp_setWindowMode(OKAPP_WindowMode windowMode);
-OKAPP_DEF OKAPP_WindowMode okapp_getWindowMode();
-OKAPP_DEF void okapp_queueQuit();
+//
+// The app public API declarations.
+//
+OKIMPLAPP_DEF void okapp_setWindowMode(OKAPP_WindowMode windowMode);
+OKIMPLAPP_DEF OKAPP_WindowMode okapp_getWindowMode();
+OKIMPLAPP_DEF void okapp_queueQuit();
 
-OKAPP_DEF int okapp_getAssetPath(char* outBuffer, size_t bufferSize, const char* fileName);
-OKAPP_DEF int okapp_loadBinaryAsset(const char* fileName, uint8_t** dataOut);
-OKAPP_DEF char* okapp_loadTextAsset(const char* fileName);
-
-
-OKAPP_DEF uint32_t okapp_getTimerMillis();
-OKAPP_DEF uint64_t okapp_getTimerMicros();
-OKAPP_DEF int okapp_loadBinaryFile(const char* fileName, uint8_t** dataOut);
-OKAPP_DEF char* okapp_loadTextFile(const char* fileName);
+OKIMPLAPP_DEF int okapp_getAssetPath(char* outBuffer, size_t bufferSize, const char* fileName);
+OKIMPLAPP_DEF int okapp_loadBinaryAsset(const char* fileName, uint8_t** dataOut);
+OKIMPLAPP_DEF char* okapp_loadTextAsset(const char* fileName);
 
 
-/*
- * ----------------------------------------------------------------------------
- * Implementation starts here.
- * ----------------------------------------------------------------------------
- */
+OKIMPLAPP_DEF uint32_t okapp_getTimerMillis();
+OKIMPLAPP_DEF uint64_t okapp_getTimerMicros();
+OKIMPLAPP_DEF int okapp_loadBinaryFile(const char* fileName, uint8_t** dataOut);
+OKIMPLAPP_DEF char* okapp_loadTextFile(const char* fileName);
+
+
+//
+// Don't use logging if the oklog logging lib was not found.
+//
+#if !defined(OKWRAPPER_OKLOG_H_) || defined(OKAPP_NO_LOGGING)
+#define OKIMPLAPP_EMPTY_FUNC(...) do {} while (0)
+#define okimplapp_logDebug(tag, ...) OKIMPLAPP_EMPTY_FUNC(tag, __VA_ARGS__)
+#define okimplapp_logInfo(tag, ...) OKIMPLAPP_EMPTY_FUNC(tag, __VA_ARGS__)
+#define okimplapp_logWarning(tag, ...) OKIMPLAPP_EMPTY_FUNC(tag, __VA_ARGS__)
+#define okimplapp_logError(tag, ...) OKIMPLAPP_EMPTY_FUNC(tag, __VA_ARGS__)
+#else
+#define okimplapp_logDebug(tag, ...) oklog_debug(tag, __VA_ARGS__)
+#define okimplapp_logInfo(tag, ...) oklog_info(tag, __VA_ARGS__)
+#define okimplapp_logWarning(tag, ...) oklog_warning(tag, __VA_ARGS__)
+#define okimplapp_logError(tag, ...) oklog_error(tag, __VA_ARGS__)
+#endif
+
+//
+// ----------------------------------------------------------------------------
+// Implementation starts here.
+// ----------------------------------------------------------------------------
+//
 
 #ifdef OKAPP_IMPLEMENTATION
 
-#include "ok_log.h"
-#include "ok_opengl.h"
+// TODO: remove this dependency but make sure not using anything from it first
+#include "okgl.h"
 
 #include <SDL.h>
 
 #include <stdio.h>
 
-#define OKAPP_DEF_INTERNAL static
+#define OKIMPLAPP_DEF_INTERNAL static
+#define OKIMPLAPP_DATA_INTERNAL static
 
-#define OKAPP_LOG_TAG "ok_app"
+#define OKIMPLAPP_LOG_TAG "okapp"
 
 
-typedef struct {
+typedef struct OKAPP_Context {
     SDL_Window* sdlWindow;
     SDL_GLContext sdlGLContext;
     char* sdlBasePath;
@@ -156,11 +187,11 @@ typedef struct {
     int done;
 } OKAPP_Context;
 
-OKAPP_DEF_INTERNAL OKAPP_Context okapp_context = {0};
+OKIMPLAPP_DATA_INTERNAL OKAPP_Context okapp_context = {0};
 
-OKAPP_DEF_INTERNAL OKAPP_AppSetup okapp_appSetup = {0};
+OKIMPLAPP_DATA_INTERNAL OKAPP_AppSetup okapp_appSetup = {0};
 
-OKAPP_DEF void okapp_setWindowMode(OKAPP_WindowMode windowMode) {
+OKIMPLAPP_DEF void okapp_setWindowMode(OKAPP_WindowMode windowMode) {
     uint32_t windowFlags = 0;
 
     switch (windowMode) {
@@ -180,7 +211,7 @@ OKAPP_DEF void okapp_setWindowMode(OKAPP_WindowMode windowMode) {
     SDL_SetWindowFullscreen(okapp_context.sdlWindow, windowFlags);
 }
 
-OKAPP_DEF OKAPP_WindowMode okapp_getWindowMode() {
+OKIMPLAPP_DEF OKAPP_WindowMode okapp_getWindowMode() {
     uint32_t windowFlags = SDL_GetWindowFlags(okapp_context.sdlWindow);
 
     if ((windowFlags & SDL_WINDOW_FULLSCREEN_DESKTOP) != 0) {
@@ -193,7 +224,7 @@ OKAPP_DEF OKAPP_WindowMode okapp_getWindowMode() {
     return OKAPP_WINDOW_MODE_WINDOWED;
 }
 
-OKAPP_DEF void okapp_queueQuit() {
+OKIMPLAPP_DEF void okapp_queueQuit() {
     okapp_context.done = 1;
 
 #if defined(EMSCRIPTEN)
@@ -201,16 +232,16 @@ OKAPP_DEF void okapp_queueQuit() {
 #endif
 }
 
-OKAPP_DEF uint32_t okapp_getTimerMillis() {
+OKIMPLAPP_DEF uint32_t okapp_getTimerMillis() {
     return SDL_GetTicks();
 }
 
-OKAPP_DEF uint64_t okapp_getTimerMicros() {
+OKIMPLAPP_DEF uint64_t okapp_getTimerMicros() {
     return SDL_GetPerformanceCounter() * 1000000LL / SDL_GetPerformanceFrequency();
 }
 
 // Replace all instances of character in a string.
-OKAPP_DEF_INTERNAL void okapp__replaceChars(char* string, char from, char to) {
+OKIMPLAPP_DEF_INTERNAL void okimplapp_replaceChars(char* string, char from, char to) {
     while (*string != '\0') {
         if (*string == from) {
             *string = to;
@@ -219,17 +250,22 @@ OKAPP_DEF_INTERNAL void okapp__replaceChars(char* string, char from, char to) {
     }
 }
 
-OKAPP_DEF int okapp_getAssetPath(char* outBuffer, size_t bufferSize, const char* fileName) {
+OKIMPLAPP_DEF int okapp_getAssetPath(char* outBuffer, size_t bufferSize, const char* fileName) {
 
     if (fileName == NULL) {
         return -1;
     }
 
-#if defined(OK_PLATFORM_ANDROID)
+// TODO: remove dependency
+#ifndef OKPLATFORM_ANDROID
+#error okplatform.h needed
+#endif
+
+#if OKPLATFORM_ANDROID
     // Special handling for Android where the assets are included in the apk.
     return snprintf(outBuffer, bufferSize, "%s", fileName);
 
-#elif defined(OK_PLATFORM_EMSCRIPTEN)
+#elif OKPLATFORM_EMSCRIPTEN
     // Special handling for emscripten for embedded assets.
     return snprintf(outBuffer, bufferSize, "assets/%s", fileName);
 
@@ -243,7 +279,7 @@ OKAPP_DEF int okapp_getAssetPath(char* outBuffer, size_t bufferSize, const char*
 #endif
 }
 
-OKAPP_DEF_INTERNAL char* okapp__mallocAssetPath(const char* fileName) {
+OKIMPLAPP_DEF_INTERNAL char* okimplapp_mallocAssetPath(const char* fileName) {
     int pathLength = okapp_getAssetPath(NULL, 0, fileName);
     if (pathLength > 0) {
         size_t bufferSizeBytes = (pathLength + 1) * sizeof(char);
@@ -258,14 +294,14 @@ OKAPP_DEF_INTERNAL char* okapp__mallocAssetPath(const char* fileName) {
     return 0;
 }
 
-OKAPP_DEF int okapp_loadBinaryAsset(const char* fileName, uint8_t** dataOut) {
-    char* path = okapp__mallocAssetPath(fileName);
+OKIMPLAPP_DEF int okapp_loadBinaryAsset(const char* fileName, uint8_t** dataOut) {
+    char* path = okimplapp_mallocAssetPath(fileName);
     int result = okapp_loadBinaryFile(path, dataOut);
     free(path);
     return result;
 }
 
-OKAPP_DEF int okapp_loadBinaryFile(const char* fileName, uint8_t** dataOut) {
+OKIMPLAPP_DEF int okapp_loadBinaryFile(const char* fileName, uint8_t** dataOut) {
     *dataOut = NULL;
 
     SDL_RWops* rw = SDL_RWFromFile(fileName, "rb");
@@ -297,14 +333,14 @@ OKAPP_DEF int okapp_loadBinaryFile(const char* fileName, uint8_t** dataOut) {
     return totalRead;
 }
 
-OKAPP_DEF char* okapp_loadTextAsset(const char* fileName) {
-    char* path = okapp__mallocAssetPath(fileName);
+OKIMPLAPP_DEF char* okapp_loadTextAsset(const char* fileName) {
+    char* path = okimplapp_mallocAssetPath(fileName);
     char* result = okapp_loadTextFile(path);
     free(path);
     return result;
 }
 
-OKAPP_DEF char* okapp_loadTextFile(const char* fileName) {
+OKIMPLAPP_DEF char* okapp_loadTextFile(const char* fileName) {
 
     SDL_RWops* rw = SDL_RWFromFile(fileName, "r");
     if (!rw) {
@@ -335,13 +371,13 @@ OKAPP_DEF char* okapp_loadTextFile(const char* fileName) {
     return dataOut;
 }
 
-OKAPP_DEF_INTERNAL int okapp__init() {
+OKIMPLAPP_DEF_INTERNAL int okimplapp_init() {
 
     memset(&okapp_context, 0, sizeof(okapp_context));
     okapp_appSetup = okapp_setup();
 
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
-        oklog_e(OKAPP_LOG_TAG, "SDL init failed: %s\n", SDL_GetError());
+        okimplapp_logError(OKIMPLAPP_LOG_TAG, "SDL init failed: %s", SDL_GetError());
         SDL_ClearError();
         return 0;
     }
@@ -350,7 +386,7 @@ OKAPP_DEF_INTERNAL int okapp__init() {
     okapp_context.sdlBasePath = SDL_GetBasePath();
     if (okapp_context.sdlBasePath) {
         // TODO: checkSDLError(__LINE__);
-        okapp__replaceChars(okapp_context.sdlBasePath, '\\', '/');
+        okimplapp_replaceChars(okapp_context.sdlBasePath, '\\', '/');
 
         int pathLength = okapp_getAssetPath(NULL, 0, "");
         if (pathLength > 0) {
@@ -358,7 +394,7 @@ OKAPP_DEF_INTERNAL int okapp__init() {
             char* buffer = (char*) malloc(bufferSizeBytes);
             pathLength = okapp_getAssetPath(buffer, bufferSizeBytes, "");
             if (pathLength > 0) {
-                oklog_i(OKAPP_LOG_TAG, "Asset path: '%s'\n", buffer);
+                okimplapp_logDebug(OKIMPLAPP_LOG_TAG, "Asset path: '%s'", buffer);
             }
             free(buffer);
         }
@@ -394,12 +430,18 @@ OKAPP_DEF_INTERNAL int okapp__init() {
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 0);
 #endif
 
-    // Request doublebuffering.
+    // Request double buffering.
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
-#ifdef OK_OPENGL_ES
+
+// TODO: pass the wanted opengl profile so that this does not need okgl.hl
+#ifndef OKGL_OPENGL_ES
+#error okgl.h needed
+#endif
+
+#if OKGL_OPENGL_ES
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, OK_OPENGL_ES_MAJOR_VERSION);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, OKGL_OPENGL_ES_MAJOR_VERSION);
 #else
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -419,7 +461,7 @@ OKAPP_DEF_INTERNAL int okapp__init() {
             okapp_appSetup.prefHeight,
             flags);
     if (!okapp_context.sdlWindow) {
-        oklog_e(OKAPP_LOG_TAG, "Creating window failed: %s\n", SDL_GetError());
+        okimplapp_logError(OKIMPLAPP_LOG_TAG, "Creating window failed: %s", SDL_GetError());
         SDL_ClearError();
         return 0;
     }
@@ -427,7 +469,7 @@ OKAPP_DEF_INTERNAL int okapp__init() {
     okapp_context.sdlGLContext = SDL_GL_CreateContext(
             okapp_context.sdlWindow);
     if (!okapp_context.sdlGLContext) {
-        oklog_e(OKAPP_LOG_TAG, "Creating GL context failed: '%s'.\n", SDL_GetError());
+        okimplapp_logError(OKIMPLAPP_LOG_TAG, "Creating GL context failed: '%s'.", SDL_GetError());
         SDL_ClearError();
         return 0;
     }
@@ -435,29 +477,10 @@ OKAPP_DEF_INTERNAL int okapp__init() {
     // Enable vsync.
     SDL_GL_SetSwapInterval(1);
 
-#ifndef OK_OPENGL_ES
-    /* Load OpenGL extensions using GLEW. */
-    GLenum err = glewInit();
-    if (GLEW_OK != err) {
-        oklog_e(OKAPP_LOG_TAG, "Error loading glew: %s\n", glewGetErrorString(err));
-        return GL_FALSE;
-    }
-    //oklog_i(OKAPP_LOG_TAG, "GLEW %s loaded.\n", glewGetString(GLEW_VERSION));
-
-    /* GLEW sometimes generates a GL error. Ignoring it. */
-    glGetError();
-
-    /* Check that opengl 2.1 is supported. */
-    if (!GLEW_VERSION_2_1) {
-        oklog_e(OKAPP_LOG_TAG, "At least Opengl 2.1 is required to run this program.\n");
-        return GL_FALSE;
-    }
-#endif
-
     return 1;
 }
 
-OKAPP_DEF_INTERNAL void okapp__release() {
+OKIMPLAPP_DEF_INTERNAL void okimplapp_release() {
     if (okapp_appSetup.onStop) {
         okapp_appSetup.onStop();
     }
@@ -481,7 +504,7 @@ OKAPP_DEF_INTERNAL void okapp__release() {
     SDL_Quit();
 }
 
-OKAPP_DEF_INTERNAL void okapp__render() {
+OKIMPLAPP_DEF_INTERNAL void okimplapp_render() {
     if (okapp_context.sdlWindow && okapp_context.sdlGLContext) {
         SDL_GL_MakeCurrent(okapp_context.sdlWindow,
                            okapp_context.sdlGLContext);
@@ -496,7 +519,7 @@ OKAPP_DEF_INTERNAL void okapp__render() {
     }
 }
 
-OKAPP_DEF_INTERNAL void okapp__sizeChanged() {
+OKIMPLAPP_DEF_INTERNAL void okimplapp_sizeChanged() {
     if (okapp_context.sdlWindow && okapp_appSetup.onSizeChanged) {
         int width;
         int height;
@@ -507,12 +530,12 @@ OKAPP_DEF_INTERNAL void okapp__sizeChanged() {
 }
 
 
-OKAPP_DEF_INTERNAL void okapp__mainLoop() {
+OKIMPLAPP_DEF_INTERNAL void okimplapp_mainLoop() {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
             case SDL_QUIT:
-                oklog_i(OKAPP_LOG_TAG, "Event: SDL_QUIT\n");
+                okimplapp_logDebug(OKIMPLAPP_LOG_TAG, "Event: SDL_QUIT");
                 okapp_queueQuit();
                 break;
 
@@ -536,8 +559,8 @@ OKAPP_DEF_INTERNAL void okapp__mainLoop() {
                 }
 
                 if (event.key.keysym.sym == SDLK_AC_BACK) {
-                    oklog_i(OKAPP_LOG_TAG, "Event: Back key pressed.\n");
-                    /* Just quitting in this example. Could move in game UI too. */
+                    okimplapp_logDebug(OKIMPLAPP_LOG_TAG, "Event: Back key pressed.");
+                    // Just quitting in this example. Could move in game UI too.
                     okapp_queueQuit();
                 }
                 break;
@@ -549,8 +572,7 @@ OKAPP_DEF_INTERNAL void okapp__mainLoop() {
                     int windowHeight;
                     SDL_GL_GetDrawableSize(okapp_context.sdlWindow, &windowWidth, &windowHeight);
 
-                    OKAPP_PointerEvent pointerEvent = {0};
-                    pointerEvent.eventType = (event.type == SDL_FINGERDOWN) ? OKAPP_POINTER_DOWN : OKAPP_POINTER_UP;
+                    OKAPP_PointerEvent pointerEvent = {.eventType=(event.type == SDL_FINGERDOWN) ? OKAPP_POINTER_DOWN : OKAPP_POINTER_UP};
                     pointerEvent.sourceId = (int) event.tfinger.touchId;
                     pointerEvent.index = (int) event.tfinger.fingerId;
                     pointerEvent.x = event.tfinger.x * windowWidth;
@@ -568,8 +590,7 @@ OKAPP_DEF_INTERNAL void okapp__mainLoop() {
                     int windowHeight;
                     SDL_GL_GetDrawableSize(okapp_context.sdlWindow, &windowWidth, &windowHeight);
 
-                    OKAPP_PointerEvent pointerEvent = {0};
-                    pointerEvent.eventType = OKAPP_POINTER_MOVE;
+                    OKAPP_PointerEvent pointerEvent = {.eventType=OKAPP_POINTER_MOVE};
                     pointerEvent.sourceId = (int) event.tfinger.touchId;
                     pointerEvent.index = (int) event.tfinger.fingerId;
                     pointerEvent.x = event.tfinger.x * windowWidth;
@@ -589,8 +610,7 @@ OKAPP_DEF_INTERNAL void okapp__mainLoop() {
                 }
 
                 if (okapp_appSetup.onPointerEvent) {
-                    OKAPP_PointerEvent pointerEvent = {0};
-                    pointerEvent.eventType = (event.type == SDL_MOUSEBUTTONDOWN) ? OKAPP_POINTER_DOWN : OKAPP_POINTER_UP;
+                    OKAPP_PointerEvent pointerEvent = {.eventType = (event.type == SDL_MOUSEBUTTONDOWN) ? OKAPP_POINTER_DOWN : OKAPP_POINTER_UP};
                     pointerEvent.sourceId = -1;
                     pointerEvent.index = event.button.button;
                     pointerEvent.x = (float) event.button.x;
@@ -607,8 +627,7 @@ OKAPP_DEF_INTERNAL void okapp__mainLoop() {
                 }
 
                 if (okapp_appSetup.onPointerEvent) {
-                    OKAPP_PointerEvent pointerEvent = {0};
-                    pointerEvent.eventType = OKAPP_POINTER_MOVE;
+                    OKAPP_PointerEvent pointerEvent = {.eventType = OKAPP_POINTER_MOVE};
                     pointerEvent.sourceId = -1;
                     pointerEvent.index = -1;
                     pointerEvent.x = (float) event.motion.x;
@@ -622,8 +641,7 @@ OKAPP_DEF_INTERNAL void okapp__mainLoop() {
 
             case SDL_MOUSEWHEEL: {
                 if (okapp_appSetup.onPointerEvent) {
-                    OKAPP_PointerEvent pointerEvent = {0};
-                    pointerEvent.eventType = OKAPP_POINTER_SCROLL;
+                    OKAPP_PointerEvent pointerEvent = {.eventType=OKAPP_POINTER_SCROLL};
                     pointerEvent.sourceId = -1;
                     pointerEvent.index = -1;
                     pointerEvent.x = (float) event.wheel.x;
@@ -652,7 +670,7 @@ OKAPP_DEF_INTERNAL void okapp__mainLoop() {
                 if (event.window.windowID == windowID) {
                     switch (event.window.event) {
                         case SDL_WINDOWEVENT_SIZE_CHANGED:
-                            okapp__sizeChanged();
+                            okimplapp_sizeChanged();
                             break;
 
                         default:
@@ -666,18 +684,16 @@ OKAPP_DEF_INTERNAL void okapp__mainLoop() {
         }
     }
 
-    okapp__render();
+    okimplapp_render();
     SDL_Delay(1);
 }
 
+OKIMPLAPP_DEF_INTERNAL int okimplapp_main(int argc, char* argv[]) {
 
-int main(int argc, char* argv[]) {
-    logInit();
-
-    if (!okapp__init()) {
-        oklog_e(OKAPP_LOG_TAG, "Initialization failed.\n");
+    if (!okimplapp_init()) {
+        okimplapp_logError(OKIMPLAPP_LOG_TAG, "Initialization failed.");
         // TODO: maybe don't give the exit callback?
-        okapp__release();
+        okimplapp_release();
         return 1;
     }
 
@@ -685,28 +701,35 @@ int main(int argc, char* argv[]) {
         okapp_appSetup.onStart(argc, argv);
     }
 
-    okapp__sizeChanged();
+    okimplapp_sizeChanged();
 
 #if defined(EMSCRIPTEN)
-    emscripten_set_main_loop(okapp__mainLoop, 0, 0);
+    emscripten_set_main_loop(okimplapp_mainLoop, 0, 0);
     return 0;
 #else
     while (!okapp_context.done) {
-        okapp__mainLoop();
+        okimplapp_mainLoop();
     }
 
-    okapp__release();
-    oklog_i(OKAPP_LOG_TAG, "All done.\n");
+    okimplapp_release();
+    okimplapp_logDebug(OKIMPLAPP_LOG_TAG, "All done.");
     return 0;
 #endif
 }
 
-#endif /* ifdef OKAPP_IMPLEMENTATION */
+// The actual main is separate to allow not using it.
+#ifndef OKAPP_NO_MAIN
+int main(int argc, char* argv[]) {
+    return okimplapp_main(argc, argv);
+}
+#endif
+
+#endif // ifdef OKAPP_IMPLEMENTATION
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* ifndef OK_PLATFORM_WRAPPER_OK_APP_H_ */
+#endif // ifndef OKWRAPPER_OKAPP_H_
 
 

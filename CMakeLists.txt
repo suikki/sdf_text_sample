@@ -10,7 +10,7 @@ include(helpers.cmake)
 set(projectDir  "${CMAKE_CURRENT_LIST_DIR}")
 set(binDir      "${projectDir}/bin")
 
-# Output executable name.
+# Build target name (Also the default output binary name).
 # NOTE: if you change this you also need to change your Android activity Java code accordingly.
 set(targetName "sdf_text")
 
@@ -27,11 +27,11 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${binDir}/${targetSystem}_debug")
 set(projectSources
   # Note: headers are only listed to show up in generated IDE projects.
   # Only the C-files need to be compiled.
-  source/ok_gl_helper/ok_gl_helper.h
-  source/ok_platform_wrapper/ok_app.h
-  source/ok_platform_wrapper/ok_log.h
-  source/ok_platform_wrapper/ok_opengl.h
-  source/ok_platform_wrapper/ok_platform.h
+  source/okwrapper/okapp.h
+  source/okwrapper/oklog.h
+  source/okwrapper/okgl.h
+  source/okwrapper/okgl_helper.h
+  source/okwrapper/okplatform.h
 
   source/main.c
   source/sdf_text_app.c
