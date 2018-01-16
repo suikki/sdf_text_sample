@@ -1,4 +1,4 @@
-# sdf_text_sample [![Travis build status](https://travis-ci.org/suikki/sdf_text_sample.svg?branch=master)](https://travis-ci.org/suikki/sdf_text_sample)
+# sdf_text_sample [![Travis build status](https://travis-ci.org/suikki/sdf_text_sample.svg?branch=master)](https://travis-ci.org/suikki/sdf_text_sample) [![Build status](https://ci.appveyor.com/api/projects/status/w29lt8nrnm104bmk?svg=true)](https://ci.appveyor.com/project/suikki/sdf-text-sample)
 
 A simple cross platform OpenGL application using signed distance field (SDF)
 font rendering to render text that can be scaled freely while still appearing
